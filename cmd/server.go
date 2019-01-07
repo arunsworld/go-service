@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -34,5 +37,27 @@ func main() {
 		ReadTimeout:  time.Minute * 3,
 		WriteTimeout: time.Minute * 3,
 	}
-	log.Fatal(srv.ListenAndServe())
+	finishedServing := make(chan struct{})
+	go func() {
+		log.Println("Serving on port 8087...")
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+		finishedServing <- struct{}{}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	select {
+	case <-c:
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			log.Println("Shutdown error:", err)
+		}
+		<-finishedServing
+	case <-finishedServing:
+	}
 }
