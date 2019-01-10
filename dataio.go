@@ -3,6 +3,7 @@ package service
 import (
 	"bufio"
 	"encoding/csv"
+	"errors"
 	"io"
 )
 
@@ -53,6 +54,20 @@ func ParseLinesAsStrings(r io.Reader, processor LineProcessor) {
 	}
 }
 
+// LineProcessorWithAbort is the function called for each line that supports returning an Abort error
+type LineProcessorWithAbort func(line string) error
+
+// ParseLinesAsStringsWithAbort parses line from a reader with option to abort
+func ParseLinesAsStringsWithAbort(r io.Reader, processor LineProcessorWithAbort) error {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		if err := processor(scanner.Text()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // BinaryLineProcessor is the function called for each line while Parsing lines
 type BinaryLineProcessor func(line []byte)
 
@@ -97,4 +112,23 @@ func (crf *CRFixer) Read(p []byte) (int, error) {
 // CRNewLineFixer converts \r to \n
 func CRNewLineFixer(in io.Reader) *CRFixer {
 	return &CRFixer{r: in}
+}
+
+// WriteCSV writes to a CSV writer the records
+func WriteCSV(spec CSVSpec, records [][]string, w io.Writer) error {
+	csvWriter := csv.NewWriter(w)
+	if spec.Comma != 0 {
+		csvWriter.Comma = spec.Comma
+	}
+	for _, record := range records {
+		if err := csvWriter.Write(record); err != nil {
+			return errors.New("error writing record to csv: " + err.Error())
+		}
+	}
+	csvWriter.Flush()
+
+	if err := csvWriter.Error(); err != nil {
+		return err
+	}
+	return nil
 }

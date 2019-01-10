@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -211,6 +212,87 @@ line 3`
 
 }
 
+func TestLineParserWithAbort(t *testing.T) {
+	data := `line 1
+line 2
+line 3
+line 4`
+
+	t.Run("With Strings and Abort", func(t *testing.T) {
+		r := strings.NewReader(data)
+
+		expected := []string{
+			"line 1",
+			"line 2",
+		}
+		found := make([]bool, len(expected))
+		counter := 0
+		err := ParseLinesAsStringsWithAbort(r, func(line string) error {
+			if counter == 2 {
+				return errors.New("abort from routine")
+			}
+			if counter == len(expected) {
+				t.Error("Found an un-expected line!", line)
+				return nil
+			}
+			if line != expected[counter] {
+				t.Errorf("Expected %s, found %s.", expected[counter], line)
+			}
+			found[counter] = true
+			counter++
+			return nil
+		})
+		if err == nil {
+			t.Error("Expecting to receive an error but did not get one.")
+			return
+		}
+		if err.Error() != "abort from routine" {
+			t.Error("Expecting to get error - abort from routine - but didn't get")
+			return
+		}
+		for i, f := range found {
+			if !f {
+				t.Errorf("Line %d not found.", i+1)
+			}
+		}
+	})
+
+	t.Run("With Strings without Abort", func(t *testing.T) {
+		r := strings.NewReader(data)
+
+		expected := []string{
+			"line 1",
+			"line 2",
+			"line 3",
+			"line 4",
+		}
+		found := make([]bool, len(expected))
+		counter := 0
+		err := ParseLinesAsStringsWithAbort(r, func(line string) error {
+			if counter == len(expected) {
+				t.Error("Found an un-expected line!", line)
+				return nil
+			}
+			if line != expected[counter] {
+				t.Errorf("Expected %s, found %s.", expected[counter], line)
+			}
+			found[counter] = true
+			counter++
+			return nil
+		})
+		if err != nil {
+			t.Error("Was not expecting an error but got: " + err.Error())
+			return
+		}
+		for i, f := range found {
+			if !f {
+				t.Errorf("Line %d not found.", i+1)
+			}
+		}
+	})
+
+}
+
 func TestFixCROnlyNewLine(t *testing.T) {
 
 	t.Run("Simple Happy Path", func(t *testing.T) {
@@ -276,4 +358,30 @@ func TestFixCROnlyNewLine(t *testing.T) {
 			t.Error("Strings did not match.")
 		}
 	})
+}
+
+func TestCSVWriter(t *testing.T) {
+	records := [][]string{
+		{"first_name", "last_name", "username"},
+		{"Rob", "Pike", "rob"},
+		{"Ken", "Thompson", "ken"},
+	}
+
+	output := bytes.Buffer{}
+	spec := CSVSpec{
+		Comma: '\t',
+	}
+
+	if err := WriteCSV(spec, records, &output); err != nil {
+		t.Error("Could not write CSV to file: ", err)
+		return
+	}
+
+	expected := "first_name\tlast_name\tusername\n" +
+		"Rob\tPike\trob\n" +
+		"Ken\tThompson\tken\n"
+
+	if output.String() != expected {
+		t.Errorf("Output did not match the expected. %s instead of %s", output.String(), expected)
+	}
 }
