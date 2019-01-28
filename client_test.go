@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +38,7 @@ func TestFileUploaderClient(t *testing.T) {
 	}
 	resp, err := FileUploaderClient(spec)
 	if err != nil {
-		t.Error("Error during file upload: ", err)
+		t.Fatal("Error during file upload: ", err)
 	}
 
 	if !strings.Contains(bodyContentsStr, "Content-Disposition: form-data; name=\"file\";") {
@@ -52,4 +54,43 @@ func TestFileUploaderClient(t *testing.T) {
 		t.Error("Did not find the right response.")
 	}
 
+}
+
+func TestHTMLParserClient(t *testing.T) {
+	response := `<html>
+	<head></head>
+	<body>
+		<p>Hello, World</p>
+	</body>
+</html>`
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, response)
+	}))
+	defer ts.Close()
+
+	counter := 0
+	var scannerErr error
+
+	spec := HTMLParserClientSpec{
+		URL: ts.URL,
+		Parser: func(r io.Reader) {
+			scanner := bufio.NewScanner(r)
+			for scanner.Scan() {
+				counter++
+			}
+			if err := scanner.Err(); err != nil {
+				scannerErr = err
+			}
+		},
+	}
+	err := HTMLParserClient(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scannerErr != nil {
+		t.Fatal(scannerErr)
+	}
+	if counter != 6 {
+		t.Fatalf("Expected 6 lines instead got %d lines.", counter)
+	}
 }

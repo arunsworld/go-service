@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -37,4 +38,27 @@ func FileUploaderClient(spec UploadClientSpec) ([]byte, error) {
 		return nil, err
 	}
 	return respContent, nil
+}
+
+// HTMLParser is a callback function once the client gets a successful response
+type HTMLParser func(io.Reader)
+
+// HTMLParserClientSpec is the spec that defines the HTMLParserClient
+type HTMLParserClientSpec struct {
+	URL    string
+	Parser HTMLParser
+}
+
+// HTMLParserClient does a GET on the spec URL and calls the included Parser function
+func HTMLParserClient(spec HTMLParserClientSpec) error {
+	resp, err := http.Get(spec.URL)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("expected 200 status code. Got: %d", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	spec.Parser(resp.Body)
+	return nil
 }
