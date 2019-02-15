@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
+	"io"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -291,6 +292,28 @@ line 4`
 		}
 	})
 
+}
+
+func TestLineParserWithCounter(t *testing.T) {
+	data := `line 1
+line 2
+line 3
+line 4`
+
+	expected := "line 3"
+
+	var r io.Reader
+	r = strings.NewReader(data)
+	records := ParseLinesAsStringsWithCounter(r, func(i int, line string) {
+		if i == 2 {
+			if line != expected {
+				t.Errorf("Expected %s, got %s.", expected, line)
+			}
+		}
+	})
+	if records != 4 {
+		t.Error("Expected 4, got:", records)
+	}
 }
 
 func TestFixCROnlyNewLine(t *testing.T) {
