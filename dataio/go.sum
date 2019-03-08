@@ -1,7 +1,0 @@
-github.com/arunsworld/go-service v0.0.0-20190215180508-f55e28aa638e h1:cMNjQf3Fd0uR8GyNDWT4upraIfRL0ausiJ+yDKMQy3A=
-github.com/arunsworld/go-service v0.0.0-20190215180508-f55e28aa638e/go.mod h1:1zvkhTRPjbOWh0urHY8bi73NJnWRXfEhJ1E5mmB62Xo=
-github.com/codegangsta/negroni v1.0.0/go.mod h1:v0y3T5G7Y1UlFfyxFn/QLRU4a2EuNau2iZY63YTKWo0=
-github.com/gofrs/uuid v3.2.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
-github.com/gorilla/mux v1.7.0/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
-github.com/rs/cors v1.6.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
-github.com/unrolled/secure v0.0.0-20190103195806-76e6d4e9b90c/go.mod h1:mnPT77IAdsi/kV7+Es7y+pXALeV3h7G6dQF6mNYjcLA=
