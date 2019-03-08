@@ -82,6 +82,30 @@ func ParseLinesAsStringsWithCounter(r io.Reader, processor LineProcessorWithCoun
 	return i
 }
 
+// BinaryLineProcessorWithCounter called for each line with counter
+type BinaryLineProcessorWithCounter func(i int, line []byte)
+
+// ParseLinesAsBytesWithCounter parses lines from a reader as bytes
+func ParseLinesAsBytesWithCounter(r io.Reader, processor BinaryLineProcessorWithCounter) int {
+	scanner := bufio.NewScanner(r)
+	i := 0
+	for scanner.Scan() {
+		processor(i, scanner.Bytes())
+		i++
+	}
+	return i
+}
+
+// CountLines counts the lines in the reader and returns it
+func CountLines(r io.Reader) int {
+	scanner := bufio.NewScanner(r)
+	i := 0
+	for scanner.Scan() {
+		i++
+	}
+	return i
+}
+
 // BinaryLineProcessor is the function called for each line while Parsing lines
 type BinaryLineProcessor func(line []byte)
 
